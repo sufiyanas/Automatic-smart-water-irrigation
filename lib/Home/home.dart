@@ -1,7 +1,30 @@
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  void makeHttpRequest() async {
+    var url = Uri.parse(
+        'https://api.thingspeak.com/channels/2215399/fields/1.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
+
+    var response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Request successful, parse response
+      var responseData = response.body;
+      // Process responseData as needed
+      print(responseData);
+    } else {
+      // Request failed, print error message
+      print('Request failed with status: ${response.statusCode}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,15 +39,35 @@ class HomeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Customtile(leadingText: "Moisture :", trailingtext: "20"),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 30),
+            child: Divider(
+              color: Colors.white70,
+            ),
+          ),
           const Customtile(leadingText: "Temperature :", trailingtext: "30"),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 30),
+            child: Divider(
+              color: Colors.white70,
+            ),
+          ),
           const Customtile(leadingText: "Humidity :", trailingtext: "40"),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 30),
+            child: Divider(
+              color: Colors.white70,
+            ),
+          ),
           //  const Spacer(),
           const SizedBox(
             height: 40,
           ),
           MaterialButton(
             color: Colors.white,
-            onPressed: () {},
+            onPressed: () {
+              makeHttpRequest();
+            },
             child: const Text("History", style: const TextStyle(fontSize: 19)),
           )
         ],
