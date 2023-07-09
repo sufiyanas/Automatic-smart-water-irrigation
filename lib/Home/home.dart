@@ -74,7 +74,18 @@ class _HomeScreenState extends State<HomeScreen> {
         temperature = channel['field2'];
         humidity = channel['field3'];
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Updated with new value......:)'),
+        ),
+      );
     } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something wend Wrong......:('),
+        ),
+      );
       print('Request failed with status: ${response.statusCode}');
     }
   }
