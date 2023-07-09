@@ -1,15 +1,29 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  void makeHttpRequest() async {
+  @override
+  void initState() {
+    super.initState();
+    makeHttpRequest(context);
+  }
+
+  String moisture = "0";
+  String temperature = "0";
+  String humidity = "0";
+
+  void makeHttpRequest(BuildContext context) async {
+    log("clicked");
+
     var url = Uri.parse(
         'https://api.thingspeak.com/channels/2215399/fields/1.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
 
@@ -17,11 +31,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (response.statusCode == 200) {
       // Request successful, parse response
-      var responseData = response.body;
+      var responseData = jsonDecode(response.body);
+      var channel = responseData['channel'];
+      setState(() {
+        moisture = channel['field1'];
+        temperature = channel['field2'];
+        humidity = channel['field3'];
+      });
+
       // Process responseData as needed
-      print(responseData);
+      // print(responseData);
     } else {
-      // Request failed, print error message
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Something went wrong .....:('),
+      //   ),
+      // );
+      // Request failed, print error me
+      // ssage
+      print('Request failed with status: ${response.statusCode}');
+    }
+  }
+
+  void buttonclick(BuildContext context) async {
+    log("clicked");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('fetching......:)'),
+      ),
+    );
+    var url = Uri.parse(
+        'https://api.thingspeak.com/channels/2215399/fields/1.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
+
+    var response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Request successful, parse response
+      var responseData = jsonDecode(response.body);
+      var channel = responseData['channel'];
+      setState(() {
+        moisture = channel['field1'];
+        temperature = channel['field2'];
+        humidity = channel['field3'];
+      });
+    } else {
       print('Request failed with status: ${response.statusCode}');
     }
   }
@@ -38,21 +91,22 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Customtile(leadingText: "Moisture :", trailingtext: "20"),
+          Customtile(leadingText: "Moisture :", trailingtext: moisture),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 30),
             child: Divider(
               color: Colors.white70,
             ),
           ),
-          const Customtile(leadingText: "Temperature :", trailingtext: "30"),
+          Customtile(leadingText: "Temperature :", trailingtext: temperature),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 30),
             child: Divider(
+              thickness: 0.5,
               color: Colors.white70,
             ),
           ),
-          const Customtile(leadingText: "Humidity :", trailingtext: "40"),
+          Customtile(leadingText: "Humidity :", trailingtext: humidity),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 30),
             child: Divider(
@@ -65,10 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           MaterialButton(
             color: Colors.white,
-            onPressed: () {
-              makeHttpRequest();
+            onPressed: () async {
+              buttonclick(context);
             },
-            child: const Text("History", style: const TextStyle(fontSize: 19)),
+            child: const Text("Refresh", style: const TextStyle(fontSize: 19)),
           )
         ],
       ),
