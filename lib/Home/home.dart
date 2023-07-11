@@ -11,131 +11,141 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    makeHttpRequest(context);
-  }
-
+  bool isLoading = false;
   String moisture = "0";
   String temperature = "0";
   String humidity = "0";
+  String entryID = "0";
+  bool isHttpRequest = false;
+
+  // void initState() {
+  //   // TODO: implement initState
+  //   super.initState();
+
+  //   makeHttpRequest(context);
+  // }
 
   void makeHttpRequest(BuildContext context) async {
-    log("clicked");
-
-    var url = Uri.parse(
-        'https://api.thingspeak.com/channels/2215399/fields/1.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
-
-    var response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      // Request successful, parse response
-      var responseData = jsonDecode(response.body);
-      var channel = responseData['channel'];
-      setState(() {
-        moisture = channel['field1'];
-        temperature = channel['field2'];
-        humidity = channel['field3'];
-      });
-
-      // Process responseData as needed
-      // print(responseData);
-    } else {
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text('Something went wrong .....:('),
-      //   ),
-      // );
-      // Request failed, print error me
-      // ssage
-      print('Request failed with status: ${response.statusCode}');
-    }
-  }
-
-  void buttonclick(BuildContext context) async {
-    log("clicked");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('fetching......:)'),
-      ),
+    log("called");
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Fetching Data'),
+          content: const Text('Please wait...'),
+        );
+      },
     );
+
     var url = Uri.parse(
-        'https://api.thingspeak.com/channels/2215399/fields/1.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
+        'https://api.thingspeak.com/channels/2215399/feeds.json?api_key=LS8VC0KIFFQ1UNCF&results=2');
 
-    var response = await http.get(url);
+    try {
+      var response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      // Request successful, parse response
-      var responseData = jsonDecode(response.body);
-      var channel = responseData['channel'];
-      setState(() {
-        moisture = channel['field1'];
-        temperature = channel['field2'];
-        humidity = channel['field3'];
-      });
+      if (response.statusCode == 200) {
+        log(200.toString());
+        var responseData = jsonDecode(response.body);
+        var feeds = responseData['feeds'];
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Updated with new value......:)'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something wend Wrong......:('),
-        ),
-      );
-      print('Request failed with status: ${response.statusCode}');
+        if (feeds != null && feeds.isNotEmpty) {
+          var latestFeed = feeds.last;
+          log(latestFeed.toString());
+          setState(() {
+            entryID = latestFeed['entry_id'] != null
+                ? latestFeed['entry_id'].toString()
+                : "0";
+            moisture = latestFeed['field1'] != null
+                ? latestFeed['field1'].toString()
+                : "0";
+            temperature = latestFeed['field2'] != null
+                ? latestFeed['field2'].toString()
+                : "0";
+            humidity = latestFeed['field3'] != null
+                ? latestFeed['field3'].toString()
+                : "0";
+          });
+        }
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    } finally {
+      Navigator.of(context).pop(); // Close the alert dialog
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((
+      _,
+    ) {
+      if (!isHttpRequest) {
+        isHttpRequest = true;
+        makeHttpRequest(context);
+      }
+    });
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(" WATER IRRIGATION"),
         centerTitle: true,
         backgroundColor: Colors.transparent,
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Customtile(leadingText: "Moisture :", trailingtext: moisture),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30),
-            child: Divider(
-              color: Colors.white70,
+      body: Container(
+        decoration: const BoxDecoration(
+            image: DecorationImage(
+                image: AssetImage("assets/backgroundImage.jpg"),
+                fit: BoxFit.cover)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Customtile(leadingText: "Moisture :", trailingtext: moisture),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Divider(
+                color: Colors.white70,
+              ),
             ),
-          ),
-          Customtile(leadingText: "Temperature :", trailingtext: temperature),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30),
-            child: Divider(
-              thickness: 0.5,
-              color: Colors.white70,
+            Customtile(leadingText: "Temperature :", trailingtext: temperature),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Divider(
+                thickness: 0.5,
+                color: Colors.white70,
+              ),
             ),
-          ),
-          Customtile(leadingText: "Humidity :", trailingtext: humidity),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30),
-            child: Divider(
-              color: Colors.white70,
+            Customtile(leadingText: "Humidity :", trailingtext: humidity),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Divider(
+                color: Colors.white70,
+              ),
             ),
-          ),
-          //  const Spacer(),
-          const SizedBox(
-            height: 40,
-          ),
-          MaterialButton(
-            color: Colors.white,
-            onPressed: () async {
-              buttonclick(context);
-            },
-            child: const Text("Refresh", style: const TextStyle(fontSize: 19)),
-          )
-        ],
+            //  const Spacer(),
+            const SizedBox(
+              height: 40,
+            ),
+            MaterialButton(
+              color: Colors.white,
+              onPressed: () async {
+                makeHttpRequest(context);
+
+                // buttonclick(context);
+              },
+              child:
+                  const Text("Refresh", style: const TextStyle(fontSize: 19)),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Text("Entryid = $entryID",
+                style: const TextStyle(color: Colors.grey, fontSize: 10)),
+          ],
+        ),
       ),
     );
   }
